@@ -1,0 +1,1640 @@
+01. SLA por Central = 
+
+// ---------------------------------------------------------
+// 🟩 [PASSO 1] - CONFIGURE SEUS DADOS
+// ---------------------------------------------------------
+
+-- Textos do visual
+VAR titulo_card    = "Cumprimento de SLA por central"                       -- Título principal do visual
+VAR subtitulo_card = "Percentual de chamados resolvidos dentro do prazo"    -- Descrição exibida abaixo do título
+
+-- Valores do período atual
+VAR percentual_central_sul   = 0.92                                         -- <--- CONECTE A MEDIDA ATUAL DA CENTRAL SUL AQUI
+VAR percentual_central_norte = 0.74                                         -- <--- CONECTE A MEDIDA ATUAL DA CENTRAL NORTE AQUI
+VAR percentual_central_leste = 0.48                                         -- <--- CONECTE A MEDIDA ATUAL DA CENTRAL LESTE AQUI
+
+-- Valores do mês anterior
+VAR percentual_central_sul_anterior   = 0.89                                -- <--- CONECTE A MEDIDA ANTERIOR DA CENTRAL SUL AQUI
+VAR percentual_central_norte_anterior = 0.77                                -- <--- CONECTE A MEDIDA ANTERIOR DA CENTRAL NORTE AQUI
+VAR percentual_central_leste_anterior = 0.55                                -- <--- CONECTE A MEDIDA ANTERIOR DA CENTRAL LESTE AQUI
+
+-- Limites de classificação
+VAR limite_saudavel = 0.85                                                  -- Resultado igual ou superior será classificado como saudável
+VAR limite_atencao  = 0.60                                                  -- Resultado igual ou superior será classificado como atenção
+
+
+// ---------------------------------------------------------
+// 🟨 [PASSO 2] - PERSONALIZE O DESIGN (OPCIONAL)
+// ---------------------------------------------------------
+
+-- Cores semânticas
+VAR cor_saudavel  = "#4CCA82"                                               -- Cor principal para status saudável
+VAR cor_atencao   = "#ED6C15"                                               -- Cor principal para status de atenção
+VAR cor_critico   = "#D11D17"                                               -- Cor principal para status crítico
+VAR cor_sem_dados = "#CBD5E1"                                               -- Cor principal quando não houver dados
+
+-- Cores dos textos de status
+VAR cor_texto_saudavel  = "#166534"                                         -- Cor do texto para status saudável
+VAR cor_texto_atencao   = "#9A3F00"                                         -- Cor do texto para status de atenção
+VAR cor_texto_critico   = "#A21814"                                         -- Cor do texto para status crítico
+VAR cor_texto_sem_dados = "#64748B"                                         -- Cor do texto quando não houver dados
+
+-- Cores dos fundos de status
+VAR cor_fundo_saudavel  = "#ECFDF3"                                         -- Fundo do status saudável
+VAR cor_fundo_atencao   = "#FFF4E8"                                         -- Fundo do status de atenção
+VAR cor_fundo_critico   = "#FFF0EF"                                         -- Fundo do status crítico
+VAR cor_fundo_sem_dados = "#F1F5F9"                                         -- Fundo quando não houver dados
+
+-- Cores da interface
+VAR cor_texto_principal  = "#0F172A"                                        -- Cor do texto principal
+VAR cor_texto_secundario = "#64748B"                                        -- Cor dos textos secundários
+VAR cor_texto_suave      = "#64748B"                                        -- Cor dos textos auxiliares e do eixo
+VAR cor_borda            = "#E2E8F0"                                        -- Cor da borda externa
+VAR cor_fundo_card       = "#FFFFFF"                                        -- Cor de fundo do card
+VAR cor_fundo_grafico    = "#FBFCFD"                                        -- Cor de fundo da área do gráfico
+VAR cor_fundo_track      = "rgba(255,255,255,0.94)"                         -- Cor de fundo das trilhas das barras
+VAR cor_linha_grade      = "rgba(100,116,139,0.30)"                         -- Cor das linhas de referência
+
+
+// ---------------------------------------------------------
+// 🚫 LÓGICA DO SISTEMA (NÃO ALTERAR ABAIXO)
+// ---------------------------------------------------------
+
+/* =========================================================
+   QUANTIDADE DE CENTRAIS COM DADOS
+   ========================================================= */
+
+VAR QtdCentraisAtual =
+      IF ( NOT ISBLANK ( percentual_central_sul ), 1, 0 )
+    + IF ( NOT ISBLANK ( percentual_central_norte ), 1, 0 )
+    + IF ( NOT ISBLANK ( percentual_central_leste ), 1, 0 )
+
+VAR QtdCentraisAnterior =
+      IF ( NOT ISBLANK ( percentual_central_sul_anterior ), 1, 0 )
+    + IF ( NOT ISBLANK ( percentual_central_norte_anterior ), 1, 0 )
+    + IF ( NOT ISBLANK ( percentual_central_leste_anterior ), 1, 0 )
+
+/* =========================================================
+   MÉDIAS
+   ========================================================= */
+
+VAR MediaAtual =
+    DIVIDE (
+          COALESCE ( percentual_central_sul, 0 )
+        + COALESCE ( percentual_central_norte, 0 )
+        + COALESCE ( percentual_central_leste, 0 ),
+        QtdCentraisAtual
+    )
+
+VAR MediaAnterior =
+    DIVIDE (
+          COALESCE ( percentual_central_sul_anterior, 0 )
+        + COALESCE ( percentual_central_norte_anterior, 0 )
+        + COALESCE ( percentual_central_leste_anterior, 0 ),
+        QtdCentraisAnterior
+    )
+
+/* =========================================================
+   VARIAÇÕES PERCENTUAIS RELATIVAS
+
+   Fórmula:
+   (atual - anterior) / anterior
+   ========================================================= */
+
+VAR VariacaoSulPct =
+    IF (
+        OR (
+            ISBLANK ( percentual_central_sul ),
+            ISBLANK ( percentual_central_sul_anterior )
+        ),
+        BLANK (),
+        DIVIDE (
+            percentual_central_sul - percentual_central_sul_anterior,
+            percentual_central_sul_anterior
+        )
+    )
+
+VAR VariacaoNortePct =
+    IF (
+        OR (
+            ISBLANK ( percentual_central_norte ),
+            ISBLANK ( percentual_central_norte_anterior )
+        ),
+        BLANK (),
+        DIVIDE (
+            percentual_central_norte - percentual_central_norte_anterior,
+            percentual_central_norte_anterior
+        )
+    )
+
+VAR VariacaoLestePct =
+    IF (
+        OR (
+            ISBLANK ( percentual_central_leste ),
+            ISBLANK ( percentual_central_leste_anterior )
+        ),
+        BLANK (),
+        DIVIDE (
+            percentual_central_leste - percentual_central_leste_anterior,
+            percentual_central_leste_anterior
+        )
+    )
+
+VAR VariacaoMediaPct =
+    IF (
+        OR (
+            ISBLANK ( MediaAtual ),
+            ISBLANK ( MediaAnterior )
+        ),
+        BLANK (),
+        DIVIDE (
+            MediaAtual - MediaAnterior,
+            MediaAnterior
+        )
+    )
+
+/* =========================================================
+   STATUS DAS CENTRAIS
+   ========================================================= */
+
+VAR StatusSul =
+    SWITCH (
+        TRUE (),
+        ISBLANK ( percentual_central_sul ), "Sem dados",
+        percentual_central_sul >= limite_saudavel, "Saudável",
+        percentual_central_sul >= limite_atencao, "Atenção",
+        "Crítico"
+    )
+
+VAR StatusNorte =
+    SWITCH (
+        TRUE (),
+        ISBLANK ( percentual_central_norte ), "Sem dados",
+        percentual_central_norte >= limite_saudavel, "Saudável",
+        percentual_central_norte >= limite_atencao, "Atenção",
+        "Crítico"
+    )
+
+VAR StatusLeste =
+    SWITCH (
+        TRUE (),
+        ISBLANK ( percentual_central_leste ), "Sem dados",
+        percentual_central_leste >= limite_saudavel, "Saudável",
+        percentual_central_leste >= limite_atencao, "Atenção",
+        "Crítico"
+    )
+
+/* =========================================================
+   CORES DAS BARRAS
+   ========================================================= */
+
+VAR CorSul =
+    SWITCH (
+        StatusSul,
+        "Saudável", cor_saudavel,
+        "Atenção", cor_atencao,
+        "Crítico", cor_critico,
+        cor_sem_dados
+    )
+
+VAR CorNorte =
+    SWITCH (
+        StatusNorte,
+        "Saudável", cor_saudavel,
+        "Atenção", cor_atencao,
+        "Crítico", cor_critico,
+        cor_sem_dados
+    )
+
+VAR CorLeste =
+    SWITCH (
+        StatusLeste,
+        "Saudável", cor_saudavel,
+        "Atenção", cor_atencao,
+        "Crítico", cor_critico,
+        cor_sem_dados
+    )
+
+/* =========================================================
+   CORES DOS STATUS NO TOOLTIP
+   ========================================================= */
+
+VAR CorTextoStatusSul =
+    SWITCH (
+        StatusSul,
+        "Saudável", cor_texto_saudavel,
+        "Atenção", cor_texto_atencao,
+        "Crítico", cor_texto_critico,
+        cor_texto_sem_dados
+    )
+
+VAR CorTextoStatusNorte =
+    SWITCH (
+        StatusNorte,
+        "Saudável", cor_texto_saudavel,
+        "Atenção", cor_texto_atencao,
+        "Crítico", cor_texto_critico,
+        cor_texto_sem_dados
+    )
+
+VAR CorTextoStatusLeste =
+    SWITCH (
+        StatusLeste,
+        "Saudável", cor_texto_saudavel,
+        "Atenção", cor_texto_atencao,
+        "Crítico", cor_texto_critico,
+        cor_texto_sem_dados
+    )
+
+VAR CorFundoStatusSul =
+    SWITCH (
+        StatusSul,
+        "Saudável", cor_fundo_saudavel,
+        "Atenção", cor_fundo_atencao,
+        "Crítico", cor_fundo_critico,
+        cor_fundo_sem_dados
+    )
+
+VAR CorFundoStatusNorte =
+    SWITCH (
+        StatusNorte,
+        "Saudável", cor_fundo_saudavel,
+        "Atenção", cor_fundo_atencao,
+        "Crítico", cor_fundo_critico,
+        cor_fundo_sem_dados
+    )
+
+VAR CorFundoStatusLeste =
+    SWITCH (
+        StatusLeste,
+        "Saudável", cor_fundo_saudavel,
+        "Atenção", cor_fundo_atencao,
+        "Crítico", cor_fundo_critico,
+        cor_fundo_sem_dados
+    )
+
+/* =========================================================
+   VALORES FORMATADOS
+   ========================================================= */
+
+VAR TxtSul =
+    IF (
+        ISBLANK ( percentual_central_sul ),
+        "—",
+        FORMAT ( percentual_central_sul, "0%" )
+    )
+
+VAR TxtNorte =
+    IF (
+        ISBLANK ( percentual_central_norte ),
+        "—",
+        FORMAT ( percentual_central_norte, "0%" )
+    )
+
+VAR TxtLeste =
+    IF (
+        ISBLANK ( percentual_central_leste ),
+        "—",
+        FORMAT ( percentual_central_leste, "0%" )
+    )
+
+VAR TxtSulAnterior =
+    IF (
+        ISBLANK ( percentual_central_sul_anterior ),
+        "—",
+        FORMAT ( percentual_central_sul_anterior, "0%" )
+    )
+
+VAR TxtNorteAnterior =
+    IF (
+        ISBLANK ( percentual_central_norte_anterior ),
+        "—",
+        FORMAT ( percentual_central_norte_anterior, "0%" )
+    )
+
+VAR TxtLesteAnterior =
+    IF (
+        ISBLANK ( percentual_central_leste_anterior ),
+        "—",
+        FORMAT ( percentual_central_leste_anterior, "0%" )
+    )
+
+VAR TxtMediaAtual =
+    IF (
+        ISBLANK ( MediaAtual ),
+        "—",
+        FORMAT ( MediaAtual, "0%" )
+    )
+
+VAR TxtMeta =
+    FORMAT ( limite_saudavel, "0%" )
+
+/* =========================================================
+   ALTURAS DAS BARRAS
+   ========================================================= */
+
+VAR AlturaSul =
+    IF (
+        ISBLANK ( percentual_central_sul ),
+        "0%",
+        FORMAT (
+            MAX (
+                0,
+                MIN ( percentual_central_sul, 1 )
+            ),
+            "0%"
+        )
+    )
+
+VAR AlturaNorte =
+    IF (
+        ISBLANK ( percentual_central_norte ),
+        "0%",
+        FORMAT (
+            MAX (
+                0,
+                MIN ( percentual_central_norte, 1 )
+            ),
+            "0%"
+        )
+    )
+
+VAR AlturaLeste =
+    IF (
+        ISBLANK ( percentual_central_leste ),
+        "0%",
+        FORMAT (
+            MAX (
+                0,
+                MIN ( percentual_central_leste, 1 )
+            ),
+            "0%"
+        )
+    )
+
+/* =========================================================
+   TEXTOS DAS VARIAÇÕES PERCENTUAIS
+   ========================================================= */
+
+VAR TxtDeltaSul =
+    SWITCH (
+        TRUE (),
+        ISBLANK ( VariacaoSulPct ),
+            "Sem comparação",
+        VariacaoSulPct > 0,
+            "▲ +" & FORMAT ( ABS ( VariacaoSulPct ), "0.0%" ),
+        VariacaoSulPct < 0,
+            "▼ -" & FORMAT ( ABS ( VariacaoSulPct ), "0.0%" ),
+        "• 0,0%"
+    )
+
+VAR TxtDeltaNorte =
+    SWITCH (
+        TRUE (),
+        ISBLANK ( VariacaoNortePct ),
+            "Sem comparação",
+        VariacaoNortePct > 0,
+            "▲ +" & FORMAT ( ABS ( VariacaoNortePct ), "0.0%" ),
+        VariacaoNortePct < 0,
+            "▼ -" & FORMAT ( ABS ( VariacaoNortePct ), "0.0%" ),
+        "• 0,0%"
+    )
+
+VAR TxtDeltaLeste =
+    SWITCH (
+        TRUE (),
+        ISBLANK ( VariacaoLestePct ),
+            "Sem comparação",
+        VariacaoLestePct > 0,
+            "▲ +" & FORMAT ( ABS ( VariacaoLestePct ), "0.0%" ),
+        VariacaoLestePct < 0,
+            "▼ -" & FORMAT ( ABS ( VariacaoLestePct ), "0.0%" ),
+        "• 0,0%"
+    )
+
+VAR TxtDeltaMedia =
+    SWITCH (
+        TRUE (),
+        ISBLANK ( VariacaoMediaPct ),
+            "Sem comparação mensal",
+        VariacaoMediaPct > 0,
+            "▲ +" & FORMAT ( ABS ( VariacaoMediaPct ), "0.0%" )
+                & " vs. mês anterior",
+        VariacaoMediaPct < 0,
+            "▼ -" & FORMAT ( ABS ( VariacaoMediaPct ), "0.0%" )
+                & " vs. mês anterior",
+        "• Estável vs. mês anterior"
+    )
+
+/* =========================================================
+   CORES DAS VARIAÇÕES
+   ========================================================= */
+
+VAR CorDeltaSul =
+    SWITCH (
+        TRUE (),
+        ISBLANK ( VariacaoSulPct ), cor_texto_sem_dados,
+        VariacaoSulPct > 0, cor_texto_saudavel,
+        VariacaoSulPct < 0, cor_texto_critico,
+        cor_texto_sem_dados
+    )
+
+VAR CorDeltaNorte =
+    SWITCH (
+        TRUE (),
+        ISBLANK ( VariacaoNortePct ), cor_texto_sem_dados,
+        VariacaoNortePct > 0, cor_texto_saudavel,
+        VariacaoNortePct < 0, cor_texto_critico,
+        cor_texto_sem_dados
+    )
+
+VAR CorDeltaLeste =
+    SWITCH (
+        TRUE (),
+        ISBLANK ( VariacaoLestePct ), cor_texto_sem_dados,
+        VariacaoLestePct > 0, cor_texto_saudavel,
+        VariacaoLestePct < 0, cor_texto_critico,
+        cor_texto_sem_dados
+    )
+
+/* =========================================================
+   TAG DE VARIAÇÃO GERAL
+   ========================================================= */
+
+VAR CorChipFundo =
+    SWITCH (
+        TRUE (),
+        ISBLANK ( VariacaoMediaPct ), cor_fundo_sem_dados,
+        VariacaoMediaPct > 0, cor_fundo_saudavel,
+        VariacaoMediaPct < 0, cor_fundo_critico,
+        cor_fundo_sem_dados
+    )
+
+VAR CorChipTexto =
+    SWITCH (
+        TRUE (),
+        ISBLANK ( VariacaoMediaPct ), cor_texto_sem_dados,
+        VariacaoMediaPct > 0, cor_texto_saudavel,
+        VariacaoMediaPct < 0, cor_texto_critico,
+        cor_texto_sem_dados
+    )
+
+/* =========================================================
+   TEXTOS DE ACESSIBILIDADE
+   ========================================================= */
+
+VAR AriaSul =
+    "Central Sul. SLA atual "
+        & TxtSul
+        & ". Status "
+        & StatusSul
+        & ". Variação percentual "
+        & TxtDeltaSul
+        & "."
+
+VAR AriaNorte =
+    "Central Norte. SLA atual "
+        & TxtNorte
+        & ". Status "
+        & StatusNorte
+        & ". Variação percentual "
+        & TxtDeltaNorte
+        & "."
+
+VAR AriaLeste =
+    "Central Leste. SLA atual "
+        & TxtLeste
+        & ". Status "
+        & StatusLeste
+        & ". Variação percentual "
+        & TxtDeltaLeste
+        & "."
+
+/* =========================================================
+   HTML E CSS
+   ========================================================= */
+
+VAR HtmlOutput =
+"
+<style>
+
+html,
+body {
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    overflow: hidden !important;
+    background: transparent !important;
+    font-family: 'Segoe UI' !important;
+}
+
+* {
+    box-sizing: border-box;
+    font-family: 'Segoe UI' !important;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+}
+
+button,
+input,
+select,
+textarea {
+    font-family: 'Segoe UI' !important;
+}
+
+.sla-card {
+    width: 100%;
+    height: 100%;
+    min-height: 340px;
+    overflow: hidden;
+    color: " & cor_texto_principal & ";
+    background: " & cor_fundo_card & ";
+    border: 1px solid " & cor_borda & ";
+    border-radius: 18px;
+}
+
+.sla-inner {
+    width: 100%;
+    height: 100%;
+    min-height: 340px;
+    padding: clamp(16px, 3vw, 22px);
+    display: flex;
+    flex-direction: column;
+}
+
+/* =========================================================
+   CABEÇALHO
+   ========================================================= */
+
+.sla-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 14px;
+    margin-bottom: 10px;
+}
+
+.sla-heading {
+    min-width: 0;
+    flex: 1;
+}
+
+.sla-title {
+    margin: 0;
+    color: " & cor_texto_principal & ";
+    font-size: clamp(18px, 3.6vw, 21px);
+    font-weight: 700;
+    line-height: 1.2;
+    letter-spacing: -0.3px;
+}
+
+.sla-subtitle {
+    margin-top: 5px;
+    color: " & cor_texto_secundario & ";
+    font-size: clamp(11px, 2.2vw, 12.5px);
+    font-weight: 400;
+    line-height: 1.4;
+}
+
+.sla-subtitle strong {
+    color: #475569;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+}
+
+.sla-subtitle-separator {
+    margin: 0 4px;
+    color: #CBD5E1;
+}
+
+.sla-chip {
+    min-height: 30px;
+    max-width: 196px;
+    padding: 6px 12px;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+    text-align: center;
+    background: " & CorChipFundo & ";
+    color: " & CorChipTexto & ";
+    font-size: clamp(10px, 2vw, 11px);
+    font-weight: 700;
+    line-height: 1.25;
+    white-space: normal;
+    font-variant-numeric: tabular-nums;
+}
+
+/* =========================================================
+   LEGENDA
+   ========================================================= */
+
+.sla-legend {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 7px 16px;
+    margin-bottom: 12px;
+    color: " & cor_texto_secundario & ";
+    font-size: clamp(10px, 2vw, 11px);
+    font-weight: 600;
+    line-height: 1.25;
+}
+
+.sla-legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+}
+
+.sla-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex: 0 0 auto;
+}
+
+/* =========================================================
+   ÁREA DO GRÁFICO
+   ========================================================= */
+
+.sla-chart {
+    flex: 1;
+    min-height: 215px;
+    display: grid;
+    grid-template-columns: 36px minmax(0, 1fr);
+    gap: 9px;
+    padding: 15px 16px 12px;
+    background: " & cor_fundo_grafico & ";
+    border: 1px solid #F1F5F9;
+    border-radius: 16px;
+}
+
+.sla-axis,
+.sla-content {
+    min-height: 0;
+    display: grid;
+    grid-template-rows: 42px minmax(150px, 1fr) 22px;
+    row-gap: 7px;
+}
+
+/* =========================================================
+   EIXO
+   Todos os rótulos usam o mesmo peso regular
+   ========================================================= */
+
+.sla-axis-zone {
+    position: relative;
+    min-height: 0;
+}
+
+.sla-tick {
+    position: absolute;
+    right: 0;
+    width: 100%;
+    color: " & cor_texto_suave & ";
+    font-size: 10px;
+    font-weight: 400 !important;
+    font-style: normal;
+    line-height: 1;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    transform: translateY(-50%);
+}
+
+.sla-tick.t100 {
+    top: 0;
+    font-weight: 400 !important;
+    transform: translateY(0);
+}
+
+.sla-tick.t85 {
+    top: 15%;
+    font-weight: 400 !important;
+}
+
+.sla-tick.t60 {
+    top: 40%;
+    font-weight: 400 !important;
+}
+
+.sla-tick.t0 {
+    top: 100%;
+    color: " & cor_texto_suave & ";
+    font-weight: 400 !important;
+    transform: translateY(-100%);
+}
+
+/* =========================================================
+   MÉTRICAS SUPERIORES
+   ========================================================= */
+
+.sla-metrics,
+.sla-tracks,
+.sla-labels {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    column-gap: clamp(16px, 4vw, 32px);
+}
+
+.sla-metrics {
+    align-items: start;
+}
+
+.sla-metric {
+    min-width: 0;
+    text-align: center;
+}
+
+.sla-value {
+    color: " & cor_texto_principal & ";
+    font-size: clamp(16px, 3vw, 18px);
+    font-weight: 700;
+    line-height: 1.1;
+    letter-spacing: -0.15px;
+    font-variant-numeric: tabular-nums;
+}
+
+.sla-delta {
+    margin-top: 4px;
+    overflow: hidden;
+    font-size: clamp(9.5px, 2vw, 10.5px);
+    font-weight: 700;
+    line-height: 1.2;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    font-variant-numeric: tabular-nums;
+}
+
+/* =========================================================
+   FAIXAS DE SLA
+   ========================================================= */
+
+.sla-scale {
+    position: relative;
+    min-height: 150px;
+    overflow: visible;
+    border-radius: 10px;
+}
+
+.sla-band {
+    position: absolute;
+    left: 0;
+    right: 0;
+}
+
+.sla-band.healthy {
+    top: 0;
+    height: 15%;
+    background: rgba(76,202,130,0.08);
+    border-radius: 10px 10px 0 0;
+}
+
+.sla-band.attention {
+    top: 15%;
+    height: 25%;
+    background: rgba(237,108,21,0.07);
+}
+
+.sla-band.critical {
+    top: 40%;
+    height: 60%;
+    background: rgba(209,29,23,0.055);
+    border-radius: 0 0 10px 10px;
+}
+
+.sla-gridline {
+    position: absolute;
+    left: 0;
+    right: 0;
+    z-index: 1;
+    border-top: 1px dashed " & cor_linha_grade & ";
+}
+
+.sla-gridline.g85 {
+    top: 15%;
+}
+
+.sla-gridline.g60 {
+    top: 40%;
+}
+
+/* =========================================================
+   BARRAS
+   ========================================================= */
+
+.sla-tracks {
+    position: relative;
+    z-index: 3;
+    width: 100%;
+    height: 100%;
+    align-items: stretch;
+}
+
+.sla-bar-wrap {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: stretch;
+    justify-content: center;
+    outline: none;
+    cursor: default;
+}
+
+.sla-bar-wrap:hover,
+.sla-bar-wrap:focus {
+    z-index: 30;
+}
+
+.sla-bar-wrap:focus-visible {
+    border-radius: 10px;
+    outline: 2px solid rgba(59,130,246,0.38);
+    outline-offset: 3px;
+}
+
+.sla-track {
+    position: relative;
+    width: clamp(34px, 7vw, 42px);
+    height: 100%;
+    overflow: hidden;
+    background: " & cor_fundo_track & ";
+    border: 1px solid rgba(148,163,184,0.34);
+    border-radius: 11px 11px 3px 3px;
+    transition:
+        border-color 160ms ease,
+        box-shadow 160ms ease,
+        transform 160ms ease;
+}
+
+.sla-bar-wrap:hover .sla-track,
+.sla-bar-wrap:focus .sla-track {
+    border-color: rgba(100,116,139,0.52);
+    box-shadow: 0 5px 14px rgba(15,23,42,0.11);
+    transform: translateY(-2px);
+}
+
+.sla-fill {
+    position: absolute;
+    left: 3px;
+    right: 3px;
+    bottom: 0;
+    min-height: 3px;
+    border-radius: 8px 8px 2px 2px;
+}
+
+/* =========================================================
+   TOOLTIP CUSTOMIZADO
+   ========================================================= */
+
+.sla-tooltip {
+    position: absolute;
+    top: 8px;
+    z-index: 50;
+    width: 214px;
+    padding: 12px;
+    visibility: hidden;
+    opacity: 0;
+    pointer-events: none;
+    color: " & cor_texto_principal & ";
+    background: rgba(255,255,255,0.99);
+    border: 1px solid " & cor_borda & ";
+    border-radius: 13px;
+    box-shadow:
+        0 14px 32px rgba(15,23,42,0.15),
+        0 3px 8px rgba(15,23,42,0.06);
+    transition:
+        opacity 150ms ease,
+        transform 150ms ease,
+        visibility 150ms ease;
+}
+
+.sla-tooltip::after {
+    content: '';
+    position: absolute;
+    bottom: -6px;
+    width: 11px;
+    height: 11px;
+    background: #FFFFFF;
+    border-right: 1px solid " & cor_borda & ";
+    border-bottom: 1px solid " & cor_borda & ";
+    transform: rotate(45deg);
+}
+
+.sla-tip-left .sla-tooltip {
+    left: 0;
+    transform: translateY(7px);
+}
+
+.sla-tip-left .sla-tooltip::after {
+    left: 30px;
+}
+
+.sla-tip-center .sla-tooltip {
+    left: 50%;
+    transform: translate(-50%, 7px);
+}
+
+.sla-tip-center .sla-tooltip::after {
+    left: 50%;
+    margin-left: -6px;
+}
+
+.sla-tip-right .sla-tooltip {
+    right: 0;
+    transform: translateY(7px);
+}
+
+.sla-tip-right .sla-tooltip::after {
+    right: 30px;
+}
+
+.sla-tip-left:hover .sla-tooltip,
+.sla-tip-left:focus .sla-tooltip,
+.sla-tip-right:hover .sla-tooltip,
+.sla-tip-right:focus .sla-tooltip {
+    visibility: visible;
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.sla-tip-center:hover .sla-tooltip,
+.sla-tip-center:focus .sla-tooltip {
+    visibility: visible;
+    opacity: 1;
+    transform: translate(-50%, 0);
+}
+
+.sla-tooltip-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 9px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #E9EEF5;
+}
+
+.sla-tooltip-title {
+    min-width: 0;
+    overflow: hidden;
+    color: " & cor_texto_principal & ";
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1.25;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.sla-tooltip-status {
+    flex: 0 0 auto;
+    padding: 4px 8px;
+    border-radius: 999px;
+    font-size: 9px;
+    font-weight: 700;
+    line-height: 1.2;
+    white-space: nowrap;
+}
+
+.sla-tooltip-values {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    padding: 11px 0;
+}
+
+.sla-tooltip-metric {
+    min-width: 0;
+}
+
+.sla-tooltip-label {
+    display: block;
+    margin-bottom: 4px;
+    color: " & cor_texto_secundario & ";
+    font-size: 9.5px;
+    font-weight: 500;
+    line-height: 1.2;
+}
+
+.sla-tooltip-number {
+    display: block;
+    color: " & cor_texto_principal & ";
+    font-size: 16px;
+    font-weight: 700;
+    line-height: 1.1;
+    font-variant-numeric: tabular-nums;
+}
+
+.sla-tooltip-footer {
+    padding-top: 9px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 10px;
+    border-top: 1px solid #E9EEF5;
+}
+
+.sla-tooltip-footer-item {
+    min-width: 0;
+}
+
+.sla-tooltip-footer-item:last-child {
+    text-align: right;
+}
+
+.sla-tooltip-footer-label {
+    display: block;
+    margin-bottom: 3px;
+    color: " & cor_texto_secundario & ";
+    font-size: 9px;
+    font-weight: 500;
+    line-height: 1.2;
+}
+
+.sla-tooltip-footer-value {
+    display: block;
+    font-size: 10px;
+    font-weight: 700;
+    line-height: 1.2;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+}
+
+/* =========================================================
+   RÓTULOS DAS CENTRAIS
+   ========================================================= */
+
+.sla-labels {
+    align-items: center;
+}
+
+.sla-label {
+    min-width: 0;
+    overflow: hidden;
+    color: #475569;
+    font-size: clamp(10px, 2.1vw, 11px);
+    font-weight: 600;
+    line-height: 1.2;
+    text-align: center;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* =========================================================
+   RESPONSIVIDADE
+   ========================================================= */
+
+@media (max-width: 460px) {
+
+    .sla-inner {
+        padding: 15px;
+    }
+
+    .sla-header {
+        gap: 9px;
+        margin-bottom: 9px;
+    }
+
+    .sla-title {
+        font-size: 18px;
+    }
+
+    .sla-chip {
+        max-width: 168px;
+        padding-left: 9px;
+        padding-right: 9px;
+        font-size: 10px;
+    }
+
+    .sla-legend {
+        gap: 6px 12px;
+        margin-bottom: 11px;
+        font-size: 10px;
+    }
+
+    .sla-chart {
+        grid-template-columns: 34px minmax(0, 1fr);
+        gap: 8px;
+        padding: 14px 13px 11px;
+    }
+
+    .sla-axis,
+    .sla-content {
+        grid-template-rows: 42px minmax(145px, 1fr) 21px;
+        row-gap: 7px;
+    }
+
+    .sla-metrics,
+    .sla-tracks,
+    .sla-labels {
+        column-gap: 11px;
+    }
+
+    .sla-value {
+        font-size: 16px;
+    }
+
+    .sla-delta {
+        font-size: 9.5px;
+    }
+
+    .sla-track {
+        width: 34px;
+    }
+
+    .sla-label {
+        font-size: 10px;
+    }
+
+    .sla-tooltip {
+        width: 190px;
+        padding: 11px;
+    }
+
+    .sla-tooltip-number {
+        font-size: 15px;
+    }
+}
+
+</style>
+
+<div
+    class='sla-card'
+    role='group'
+    aria-label='Cumprimento de SLA por central'
+>
+    <div class='sla-inner'>
+
+        <div class='sla-header'>
+
+            <div class='sla-heading'>
+
+                <h1 class='sla-title'>
+                    " & titulo_card & "
+                </h1>
+
+                <div class='sla-subtitle'>
+                    " & subtitulo_card & "
+                    <span class='sla-subtitle-separator'>·</span>
+                    Média atual:
+                    <strong>" & TxtMediaAtual & "</strong>
+                </div>
+
+            </div>
+
+            <div class='sla-chip'>
+                " & TxtDeltaMedia & "
+            </div>
+
+        </div>
+
+        <div class='sla-legend'>
+
+            <span class='sla-legend-item'>
+                <span
+                    class='sla-dot'
+                    style='background:" & cor_saudavel & ";'
+                ></span>
+                Saudável ≥ 85%
+            </span>
+
+            <span class='sla-legend-item'>
+                <span
+                    class='sla-dot'
+                    style='background:" & cor_atencao & ";'
+                ></span>
+                Atenção 60% a 84%
+            </span>
+
+            <span class='sla-legend-item'>
+                <span
+                    class='sla-dot'
+                    style='background:" & cor_critico & ";'
+                ></span>
+                Crítico &lt; 60%
+            </span>
+
+        </div>
+
+        <div class='sla-chart'>
+
+            <div class='sla-axis'>
+
+                <div></div>
+
+                <div class='sla-axis-zone'>
+                    <span class='sla-tick t100'>100%</span>
+                    <span class='sla-tick t85'>85%</span>
+                    <span class='sla-tick t60'>60%</span>
+                    <span class='sla-tick t0'>0%</span>
+                </div>
+
+                <div></div>
+
+            </div>
+
+            <div class='sla-content'>
+
+                <div class='sla-metrics'>
+
+                    <div class='sla-metric'>
+
+                        <div class='sla-value'>
+                            " & TxtSul & "
+                        </div>
+
+                        <div
+                            class='sla-delta'
+                            style='color:" & CorDeltaSul & ";'
+                        >
+                            " & TxtDeltaSul & "
+                        </div>
+
+                    </div>
+
+                    <div class='sla-metric'>
+
+                        <div class='sla-value'>
+                            " & TxtNorte & "
+                        </div>
+
+                        <div
+                            class='sla-delta'
+                            style='color:" & CorDeltaNorte & ";'
+                        >
+                            " & TxtDeltaNorte & "
+                        </div>
+
+                    </div>
+
+                    <div class='sla-metric'>
+
+                        <div class='sla-value'>
+                            " & TxtLeste & "
+                        </div>
+
+                        <div
+                            class='sla-delta'
+                            style='color:" & CorDeltaLeste & ";'
+                        >
+                            " & TxtDeltaLeste & "
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <div class='sla-scale'>
+
+                    <div class='sla-band healthy'></div>
+                    <div class='sla-band attention'></div>
+                    <div class='sla-band critical'></div>
+
+                    <div class='sla-gridline g85'></div>
+                    <div class='sla-gridline g60'></div>
+
+                    <div class='sla-tracks'>
+
+                        <div
+                            class='sla-bar-wrap sla-tip-left'
+                            tabindex='0'
+                            aria-label='" & AriaSul & "'
+                        >
+
+                            <div class='sla-track'>
+
+                                <div
+                                    class='sla-fill'
+                                    style='
+                                        height:" & AlturaSul & ";
+                                        background:" & CorSul & ";
+                                    '
+                                ></div>
+
+                            </div>
+
+                            <div
+                                class='sla-tooltip'
+                                role='tooltip'
+                            >
+
+                                <div class='sla-tooltip-header'>
+
+                                    <span class='sla-tooltip-title'>
+                                        Central Sul
+                                    </span>
+
+                                    <span
+                                        class='sla-tooltip-status'
+                                        style='
+                                            background:" & CorFundoStatusSul & ";
+                                            color:" & CorTextoStatusSul & ";
+                                        '
+                                    >
+                                        " & StatusSul & "
+                                    </span>
+
+                                </div>
+
+                                <div class='sla-tooltip-values'>
+
+                                    <div class='sla-tooltip-metric'>
+
+                                        <span class='sla-tooltip-label'>
+                                            SLA atual
+                                        </span>
+
+                                        <strong class='sla-tooltip-number'>
+                                            " & TxtSul & "
+                                        </strong>
+
+                                    </div>
+
+                                    <div class='sla-tooltip-metric'>
+
+                                        <span class='sla-tooltip-label'>
+                                            Mês anterior
+                                        </span>
+
+                                        <strong class='sla-tooltip-number'>
+                                            " & TxtSulAnterior & "
+                                        </strong>
+
+                                    </div>
+
+                                </div>
+
+                                <div class='sla-tooltip-footer'>
+
+                                    <div class='sla-tooltip-footer-item'>
+
+                                        <span class='sla-tooltip-footer-label'>
+                                            Variação percentual
+                                        </span>
+
+                                        <strong
+                                            class='sla-tooltip-footer-value'
+                                            style='color:" & CorDeltaSul & ";'
+                                        >
+                                            " & TxtDeltaSul & "
+                                        </strong>
+
+                                    </div>
+
+                                    <div class='sla-tooltip-footer-item'>
+
+                                        <span class='sla-tooltip-footer-label'>
+                                            Meta saudável
+                                        </span>
+
+                                        <strong
+                                            class='sla-tooltip-footer-value'
+                                            style='color:" & cor_texto_saudavel & ";'
+                                        >
+                                            ≥ " & TxtMeta & "
+                                        </strong>
+
+                                    </div>
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                        <div
+                            class='sla-bar-wrap sla-tip-center'
+                            tabindex='0'
+                            aria-label='" & AriaNorte & "'
+                        >
+
+                            <div class='sla-track'>
+
+                                <div
+                                    class='sla-fill'
+                                    style='
+                                        height:" & AlturaNorte & ";
+                                        background:" & CorNorte & ";
+                                    '
+                                ></div>
+
+                            </div>
+
+                            <div
+                                class='sla-tooltip'
+                                role='tooltip'
+                            >
+
+                                <div class='sla-tooltip-header'>
+
+                                    <span class='sla-tooltip-title'>
+                                        Central Norte
+                                    </span>
+
+                                    <span
+                                        class='sla-tooltip-status'
+                                        style='
+                                            background:" & CorFundoStatusNorte & ";
+                                            color:" & CorTextoStatusNorte & ";
+                                        '
+                                    >
+                                        " & StatusNorte & "
+                                    </span>
+
+                                </div>
+
+                                <div class='sla-tooltip-values'>
+
+                                    <div class='sla-tooltip-metric'>
+
+                                        <span class='sla-tooltip-label'>
+                                            SLA atual
+                                        </span>
+
+                                        <strong class='sla-tooltip-number'>
+                                            " & TxtNorte & "
+                                        </strong>
+
+                                    </div>
+
+                                    <div class='sla-tooltip-metric'>
+
+                                        <span class='sla-tooltip-label'>
+                                            Mês anterior
+                                        </span>
+
+                                        <strong class='sla-tooltip-number'>
+                                            " & TxtNorteAnterior & "
+                                        </strong>
+
+                                    </div>
+
+                                </div>
+
+                                <div class='sla-tooltip-footer'>
+
+                                    <div class='sla-tooltip-footer-item'>
+
+                                        <span class='sla-tooltip-footer-label'>
+                                            Variação percentual
+                                        </span>
+
+                                        <strong
+                                            class='sla-tooltip-footer-value'
+                                            style='color:" & CorDeltaNorte & ";'
+                                        >
+                                            " & TxtDeltaNorte & "
+                                        </strong>
+
+                                    </div>
+
+                                    <div class='sla-tooltip-footer-item'>
+
+                                        <span class='sla-tooltip-footer-label'>
+                                            Meta saudável
+                                        </span>
+
+                                        <strong
+                                            class='sla-tooltip-footer-value'
+                                            style='color:" & cor_texto_saudavel & ";'
+                                        >
+                                            ≥ " & TxtMeta & "
+                                        </strong>
+
+                                    </div>
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                        <div
+                            class='sla-bar-wrap sla-tip-right'
+                            tabindex='0'
+                            aria-label='" & AriaLeste & "'
+                        >
+
+                            <div class='sla-track'>
+
+                                <div
+                                    class='sla-fill'
+                                    style='
+                                        height:" & AlturaLeste & ";
+                                        background:" & CorLeste & ";
+                                    '
+                                ></div>
+
+                            </div>
+
+                            <div
+                                class='sla-tooltip'
+                                role='tooltip'
+                            >
+
+                                <div class='sla-tooltip-header'>
+
+                                    <span class='sla-tooltip-title'>
+                                        Central Leste
+                                    </span>
+
+                                    <span
+                                        class='sla-tooltip-status'
+                                        style='
+                                            background:" & CorFundoStatusLeste & ";
+                                            color:" & CorTextoStatusLeste & ";
+                                        '
+                                    >
+                                        " & StatusLeste & "
+                                    </span>
+
+                                </div>
+
+                                <div class='sla-tooltip-values'>
+
+                                    <div class='sla-tooltip-metric'>
+
+                                        <span class='sla-tooltip-label'>
+                                            SLA atual
+                                        </span>
+
+                                        <strong class='sla-tooltip-number'>
+                                            " & TxtLeste & "
+                                        </strong>
+
+                                    </div>
+
+                                    <div class='sla-tooltip-metric'>
+
+                                        <span class='sla-tooltip-label'>
+                                            Mês anterior
+                                        </span>
+
+                                        <strong class='sla-tooltip-number'>
+                                            " & TxtLesteAnterior & "
+                                        </strong>
+
+                                    </div>
+
+                                </div>
+
+                                <div class='sla-tooltip-footer'>
+
+                                    <div class='sla-tooltip-footer-item'>
+
+                                        <span class='sla-tooltip-footer-label'>
+                                            Variação percentual
+                                        </span>
+
+                                        <strong
+                                            class='sla-tooltip-footer-value'
+                                            style='color:" & CorDeltaLeste & ";'
+                                        >
+                                            " & TxtDeltaLeste & "
+                                        </strong>
+
+                                    </div>
+
+                                    <div class='sla-tooltip-footer-item'>
+
+                                        <span class='sla-tooltip-footer-label'>
+                                            Meta saudável
+                                        </span>
+
+                                        <strong
+                                            class='sla-tooltip-footer-value'
+                                            style='color:" & cor_texto_saudavel & ";'
+                                        >
+                                            ≥ " & TxtMeta & "
+                                        </strong>
+
+                                    </div>
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <div class='sla-labels'>
+                    <div class='sla-label'>Central Sul</div>
+                    <div class='sla-label'>Central Norte</div>
+                    <div class='sla-label'>Central Leste</div>
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+</div>
+"
+
+RETURN
+    HtmlOutput
