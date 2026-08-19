@@ -1,0 +1,425 @@
+01. Medidor de Risco (SVG) = 
+
+// ---------------------------------------------------------
+// 🟩 [PASSO 1] - CONFIGURE SEUS DADOS
+// ---------------------------------------------------------
+
+VAR valor_base_tratado              = 0.32                 -- <--- CONECTE SUA MEDIDA DE RISCO AQUI
+VAR titulo_visual                   = "Medidor de risco"   -- Título exibido no topo do visual
+
+VAR texto_muito_baixo               = "muito baixo"        -- Rótulo da primeira faixa
+VAR texto_baixo                     = "baixo"              -- Rótulo da segunda faixa
+VAR texto_medio                     = "médio"              -- Rótulo da terceira faixa
+VAR texto_alto                      = "alto"               -- Rótulo da quarta faixa
+VAR texto_critico                   = "crítico"            -- Rótulo da quinta faixa
+
+
+// ---------------------------------------------------------
+// 🟨 [PASSO 2] - PERSONALIZE O DESIGN (OPCIONAL)
+// ---------------------------------------------------------
+
+-- Fonte
+VAR fonte_padrao                    = "Segoe UI"           -- Fonte principal do visual
+
+-- Layout externo
+VAR margem_interna_visual           = "6px"                -- Espaço interno do card
+VAR raio_borda_visual               = "20px"               -- Arredondamento da borda externa
+
+-- ViewBox do SVG
+VAR viewbox_x                       = -98                  -- Posição inicial horizontal do SVG
+VAR viewbox_y                       = -18                  -- Posição inicial vertical do SVG
+VAR viewbox_largura                 = 970                  -- Largura da área SVG
+VAR viewbox_altura                  = 630                  -- Altura da área SVG
+
+-- Título
+VAR x_titulo                        = -46                  -- Posição horizontal do título
+VAR y_titulo                        = 58                   -- Posição vertical do título
+VAR tamanho_titulo                  = 38                   -- Tamanho da fonte do título
+VAR peso_titulo                     = 700                  -- Peso da fonte do título
+VAR espacamento_titulo              = "-0.4"               -- Espaçamento entre letras do título
+
+-- Tag do percentual
+VAR x_tag                           = 682                  -- Posição horizontal da tag
+VAR y_tag                           = 18                   -- Posição vertical da tag
+VAR largura_tag                     = 150                  -- Largura da tag
+VAR altura_tag                      = 52                   -- Altura da tag
+VAR raio_tag                        = 26                   -- Arredondamento da tag
+
+-- Velocímetro
+VAR escala_velocimetro              = "0.92"               -- Escala geral do velocímetro
+VAR deslocamento_x_velocimetro      = -80                  -- Centralização horizontal correta do velocímetro
+VAR deslocamento_y_velocimetro      = 0                    -- Deslocamento vertical do velocímetro
+
+-- Rótulos do velocímetro
+VAR fonte_rotulos_velocimetro       = 30                   -- Tamanho dos rótulos curvos
+VAR peso_rotulos_velocimetro        = 600                  -- Peso dos rótulos curvos
+VAR espacamento_rotulos_velocimetro = "0.25"               -- Espaçamento dos rótulos curvos
+
+-- Cores principais
+VAR cor_fundo                       = "#FFFFFF"            -- Cor de fundo do visual
+VAR cor_texto                       = "#2F3137"            -- Cor dos textos do velocímetro
+VAR cor_titulo                      = "#0F172A"            -- Cor do título
+
+-- Cores das faixas
+VAR cor_verde_01                    = "#08D933"            -- Cor da faixa muito baixo
+VAR cor_verde_02                    = "#A3D11E"            -- Cor da faixa baixo
+VAR cor_amarelo                     = "#F4CF38"            -- Cor da faixa médio
+VAR cor_laranja                     = "#FF7600"            -- Cor da faixa alto
+VAR cor_vermelho                    = "#FF0D12"            -- Cor da faixa crítico
+
+-- Cores complementares
+VAR cor_ponteiro                    = "#2F3137"            -- Cor do ponteiro
+VAR cor_separador                   = "#FFFFFF"            -- Cor dos separadores das faixas
+VAR cor_borda_visual                = "#E7EDF4"            -- Cor da borda externa
+
+
+// ---------------------------------------------------------
+// 🚫 LÓGICA DO SISTEMA (NÃO ALTERAR ABAIXO)
+// ---------------------------------------------------------
+
+VAR valor_risco                     =
+    MIN (
+        100,
+        MAX (
+            0,
+            IF ( valor_base_tratado <= 1, valor_base_tratado * 100, valor_base_tratado )
+        )
+    )
+
+VAR valor_risco_formatado           =
+    FORMAT ( DIVIDE ( valor_risco, 100 ), "0.0%", "pt-BR" )
+
+VAR faixa_risco                     =
+    SWITCH (
+        TRUE (),
+        valor_risco <= 20, texto_muito_baixo,
+        valor_risco <= 40, texto_baixo,
+        valor_risco <= 60, texto_medio,
+        valor_risco <= 80, texto_alto,
+        texto_critico
+    )
+
+VAR faixa_risco_label               =
+    SWITCH (
+        TRUE (),
+        valor_risco <= 20, "Muito baixo",
+        valor_risco <= 40, "Baixo",
+        valor_risco <= 60, "Médio",
+        valor_risco <= 80, "Alto",
+        "Crítico"
+    )
+
+VAR status_risco                    =
+    "Risco " & faixa_risco_label
+
+VAR angulo_ponteiro                 =
+    ROUND ( -90 + ( valor_risco * 1.8 ), 0 )
+
+VAR cor_risco                       =
+    SWITCH (
+        TRUE (),
+        valor_risco <= 20, "#059669",
+        valor_risco <= 40, "#65A30D",
+        valor_risco <= 60, "#D97706",
+        valor_risco <= 80, "#EA580C",
+        "#DC2626"
+    )
+
+VAR cor_fundo_badge                 =
+    SWITCH (
+        TRUE (),
+        valor_risco <= 20, "#F0FDF4",
+        valor_risco <= 40, "#F7FEE7",
+        valor_risco <= 60, "#FFFBEB",
+        valor_risco <= 80, "#FFF7ED",
+        "#FEF2F2"
+    )
+
+VAR cor_borda_badge                 =
+    SWITCH (
+        TRUE (),
+        valor_risco <= 20, "#BBF7D0",
+        valor_risco <= 40, "#D9F99D",
+        valor_risco <= 60, "#FDE68A",
+        valor_risco <= 80, "#FED7AA",
+        "#FECACA"
+    )
+
+VAR svg_icone_tag                   =
+    SWITCH (
+        TRUE (),
+
+        valor_risco <= 40,
+            "
+            <circle
+                cx='27'
+                cy='26'
+                r='12.5'
+                fill='none'
+                stroke='" & cor_risco & "'
+                stroke-width='2.6'/>
+
+            <path
+                d='M21.3 26.3 L25.1 30.1 L33.0 22.2'
+                fill='none'
+                stroke='" & cor_risco & "'
+                stroke-width='2.6'
+                stroke-linecap='round'
+                stroke-linejoin='round'/>
+            ",
+
+        valor_risco <= 80,
+            "
+            <path
+                d='M27 12.5 L40 35 H14 Z'
+                fill='none'
+                stroke='" & cor_risco & "'
+                stroke-width='2.6'
+                stroke-linejoin='round'/>
+
+            <line
+                x1='27'
+                y1='20.2'
+                x2='27'
+                y2='27.8'
+                stroke='" & cor_risco & "'
+                stroke-width='2.6'
+                stroke-linecap='round'/>
+
+            <circle
+                cx='27'
+                cy='32'
+                r='1.5'
+                fill='" & cor_risco & "'/>
+            ",
+
+            "
+            <circle
+                cx='27'
+                cy='26'
+                r='12.5'
+                fill='none'
+                stroke='" & cor_risco & "'
+                stroke-width='2.6'/>
+
+            <path
+                d='M22 21 L32 31'
+                fill='none'
+                stroke='" & cor_risco & "'
+                stroke-width='2.6'
+                stroke-linecap='round'/>
+
+            <path
+                d='M32 21 L22 31'
+                fill='none'
+                stroke='" & cor_risco & "'
+                stroke-width='2.6'
+                stroke-linecap='round'/>
+            "
+    )
+
+VAR svg_final                       =
+"
+<svg
+    xmlns='http://www.w3.org/2000/svg'
+    viewBox='" & viewbox_x & " " & viewbox_y & " " & viewbox_largura & " " & viewbox_altura & "'
+    width='100%'
+    height='100%'
+    preserveAspectRatio='xMidYMid meet'
+    overflow='visible'
+    style='display:block;width:100%;height:100%;max-width:100%;max-height:100%;overflow:visible;background:" & cor_fundo & ";'>
+
+    <title>Faixa atual: " & faixa_risco & " | valor: " & valor_risco_formatado & "</title>
+
+    <rect
+        x='" & viewbox_x & "'
+        y='" & viewbox_y & "'
+        width='" & viewbox_largura & "'
+        height='" & viewbox_altura & "'
+        fill='" & cor_fundo & "'/>
+
+    <text
+        x='" & x_titulo & "'
+        y='" & y_titulo & "'
+        text-anchor='start'
+        font-family='" & fonte_padrao & "'
+        font-size='" & tamanho_titulo & "'
+        font-weight='" & peso_titulo & "'
+        letter-spacing='" & espacamento_titulo & "'
+        fill='" & cor_titulo & "'>
+        " & titulo_visual & "
+    </text>
+
+    <g transform='translate(" & x_tag & " " & y_tag & ")'>
+
+        <rect
+            x='0'
+            y='0'
+            width='" & largura_tag & "'
+            height='" & altura_tag & "'
+            rx='" & raio_tag & "'
+            fill='" & cor_fundo_badge & "'
+            stroke='" & cor_borda_badge & "'
+            stroke-width='1.25'/>
+
+        " & svg_icone_tag & "
+
+        <text
+            x='52'
+            y='36'
+            text-anchor='start'
+            font-family='" & fonte_padrao & "'
+            font-size='30'
+            font-weight='600'
+            letter-spacing='-0.4'
+            fill='" & cor_risco & "'>
+            " & valor_risco_formatado & "
+        </text>
+    </g>
+
+    <g
+        transform='matrix(" & escala_velocimetro & " 0 0 " & escala_velocimetro & " " & deslocamento_x_velocimetro & " " & deslocamento_y_velocimetro & ")'
+        style='overflow:visible;'>
+
+        <path
+            d='M 132 558 A 376 376 0 0 1 203.8 337 L 365.6 454.6 A 176 176 0 0 0 332 558 Z'
+            fill='" & cor_verde_01 & "'/>
+
+        <path
+            d='M 203.8 337 A 376 376 0 0 1 391.8 200.5 L 453.6 390.7 A 176 176 0 0 0 365.6 454.6 Z'
+            fill='" & cor_verde_02 & "'/>
+
+        <path
+            d='M 391.8 200.5 A 376 376 0 0 1 624.2 200.5 L 562.4 390.7 A 176 176 0 0 0 453.6 390.7 Z'
+            fill='" & cor_amarelo & "'/>
+
+        <path
+            d='M 624.2 200.5 A 376 376 0 0 1 812.2 337 L 650.4 454.6 A 176 176 0 0 0 562.4 390.7 Z'
+            fill='" & cor_laranja & "'/>
+
+        <path
+            d='M 812.2 337 A 376 376 0 0 1 884 558 L 684 558 A 176 176 0 0 0 650.4 454.6 Z'
+            fill='" & cor_vermelho & "'/>
+
+        <line x1='198.9' y1='330.2' x2='369.7' y2='454.3' stroke='" & cor_separador & "' stroke-width='8'/>
+        <line x1='389.4' y1='193.3' x2='454.7' y2='394.4' stroke='" & cor_separador & "' stroke-width='8'/>
+        <line x1='626.6' y1='193.3' x2='561.3' y2='394.4' stroke='" & cor_separador & "' stroke-width='8'/>
+        <line x1='817.1' y1='330.2' x2='646.3' y2='454.3' stroke='" & cor_separador & "' stroke-width='8'/>
+
+        <circle cx='508' cy='558' r='176' fill='" & cor_fundo & "'/>
+
+        <defs>
+            <path id='lbl_muito_baixo' d='M 103.9 529.7 A 405 405 0 0 1 172.2 331.5' />
+            <path id='lbl_baixo' d='M 188.9 308.7 A 405 405 0 0 1 356.3 182.5' />
+            <path id='lbl_medio' d='M 382.8 172.8 A 405 405 0 0 1 633.2 172.8' />
+            <path id='lbl_alto' d='M 659.7 182.5 A 405 405 0 0 1 827.1 308.7' />
+            <path id='lbl_critico' d='M 843.8 331.5 A 405 405 0 0 1 912.1 529.7' />
+        </defs>
+
+        <g
+            fill='" & cor_texto & "'
+            font-family='" & fonte_padrao & "'
+            font-size='" & fonte_rotulos_velocimetro & "'
+            font-weight='" & peso_rotulos_velocimetro & "'
+            letter-spacing='" & espacamento_rotulos_velocimetro & "'
+            text-rendering='geometricPrecision'
+            style='overflow:visible;'>
+
+            <text text-anchor='middle' style='overflow:visible;'>
+                <textPath href='#lbl_muito_baixo' startOffset='50%' method='align' spacing='auto'>" & texto_muito_baixo & "</textPath>
+            </text>
+
+            <text text-anchor='middle' style='overflow:visible;'>
+                <textPath href='#lbl_baixo' startOffset='50%' method='align' spacing='auto'>" & texto_baixo & "</textPath>
+            </text>
+
+            <text text-anchor='middle' style='overflow:visible;'>
+                <textPath href='#lbl_medio' startOffset='50%' method='align' spacing='auto'>" & texto_medio & "</textPath>
+            </text>
+
+            <text text-anchor='middle' style='overflow:visible;'>
+                <textPath href='#lbl_alto' startOffset='50%' method='align' spacing='auto'>" & texto_alto & "</textPath>
+            </text>
+
+            <text text-anchor='middle' style='overflow:visible;'>
+                <textPath href='#lbl_critico' startOffset='50%' method='align' spacing='auto'>" & texto_critico & "</textPath>
+            </text>
+        </g>
+
+        <g transform='rotate(" & angulo_ponteiro & " 508 558)'>
+            <polygon
+                points='508,285 472,555 544,555'
+                fill='" & cor_ponteiro & "'/>
+
+            <circle
+                cx='508'
+                cy='558'
+                r='52'
+                fill='" & cor_ponteiro & "'/>
+
+            <circle
+                cx='508'
+                cy='558'
+                r='33'
+                fill='" & cor_fundo & "'/>
+        </g>
+
+    </g>
+
+</svg>
+"
+
+RETURN
+"
+<style>
+    html, body {
+        margin:0;
+        padding:0;
+        width:100%;
+        height:100%;
+        overflow:hidden !important;
+        background:transparent;
+        font-family:'" & fonte_padrao & "';
+    }
+
+    * {
+        box-sizing:border-box;
+        font-family:'" & fonte_padrao & "';
+    }
+
+    ::-webkit-scrollbar {
+        width:0;
+        height:0;
+        display:none;
+    }
+</style>
+
+<div style='
+    width:100%;
+    height:100%;
+    margin:0;
+    padding:" & margem_interna_visual & ";
+    overflow:hidden !important;
+    background:" & cor_fundo & ";
+    border:1px solid " & cor_borda_visual & ";
+    border-radius:" & raio_borda_visual & ";
+    box-sizing:border-box;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+'>
+    <div style='
+        width:100%;
+        height:100%;
+        margin:0;
+        padding:0;
+        overflow:hidden !important;
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        box-sizing:border-box;
+    '>
+        " & svg_final & "
+    </div>
+</div>
+"
